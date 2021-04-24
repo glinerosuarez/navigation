@@ -1,0 +1,9 @@
+[default]
+    # dqn_agent settings.
+    [default.agent]
+    replay_buffer_size = 10E5
+    batch_size = 64
+    gamma = 0.99        # discount factor.
+    tau = 10E-3         # for soft update of target parameters.
+    lr = 5E-4           # learning rate.
+    update_every = 4    # how often to update the network
