@@ -5,7 +5,7 @@ import torch.nn as nn
 class QNetwork(nn.Module):
     """Actor (Policy) Model."""
 
-    def __init__(self, state_size, action_size, seed):
+    def __init__(self, state_size: int, action_size: int, seed: int) -> None:
         """Initialize parameters and build model.
         Params
         ======
@@ -16,7 +16,7 @@ class QNetwork(nn.Module):
         super(QNetwork, self).__init__()
         self.seed = torch.manual_seed(seed)
 
-        self.linear_relu_stack = nn.Sequential(
+        self.linear_relu_stack: nn.Sequential = nn.Sequential(
             nn.Linear(state_size, 512),
             nn.ReLU(),
             nn.Linear(512, 512),
@@ -24,6 +24,6 @@ class QNetwork(nn.Module):
             nn.Linear(512, action_size)
         )
 
-    def forward(self, state):
+    def forward(self, state: tuple) -> nn.Sequential:
         """Build a network that maps state -> action values."""
         return self.linear_relu_stack(state)
