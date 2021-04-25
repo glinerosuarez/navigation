@@ -249,5 +249,3 @@ if __name__ == "__main__":
         navigate_randomly()
     else:
         navigate_smart(get_last_model_file(Path()/settings.output_dir/settings.checkpoints_dir))
-
-
