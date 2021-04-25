@@ -1,16 +1,21 @@
 env_file = "environment\\Banana.exe"
 seed = 24
-episodes = 2_000        # maximum number of training episodes
-max_t = 1_000           # maximum number of timesteps per episode
-eps_start = 1.0         # starting value of epsilon, for epsilon-greedy action selection
-eps_end = 0.01          # minimum value of epsilon
-eps_decay = 0.995       # multiplicative factor (per episode) for decreasing epsilon
+episodes = 3_000                    # maximum number of training episodes
+max_t = 1_000                       # maximum number of timesteps per episode
+eps_start = 1.0                     # starting value of epsilon, for epsilon-greedy action selection
+eps_end = 0.01                      # minimum value of epsilon
+eps_decay = 0.995                   # multiplicative factor (per episode) for decreasing epsilon
+output_dir = "output"               # dir to store ouputs
+checkpoints_dir = "checkpoints"     # the name of the dir where the model's weights will be stored in.
+checkpoints_every = 500             # how often the weights will be saved.
+score_window_size = 100             # the window size to compute moving avg of scores
+solved_at = 13.0                    # env cosidered solved, when the moving avg of scores reaches this threshold
 
 # dqn_agent settings.
 [agent]
 replay_buffer_size = 100_000
 batch_size = 64
-gamma = 0.99        # discount factor.
-tau = 10E-3         # for soft update of target parameters.
-lr = 5E-4           # learning rate.
-update_every = 4    # how often to update the network
+gamma = 0.99                        # discount factor.
+tau = 10E-3                         # for soft update of target parameters.
+lr = 5E-4                           # learning rate.
+update_every = 4                    # how often to update the network
