@@ -1,9 +1,16 @@
-[default]
-    # dqn_agent settings.
-    [default.agent]
-    replay_buffer_size = 10E5
-    batch_size = 64
-    gamma = 0.99        # discount factor.
-    tau = 10E-3         # for soft update of target parameters.
-    lr = 5E-4           # learning rate.
-    update_every = 4    # how often to update the network
+env_file = "environment\\Banana.exe"
+seed = 24
+episodes = 2_000        # maximum number of training episodes
+max_t = 1_000           # maximum number of timesteps per episode
+eps_start = 1.0         # starting value of epsilon, for epsilon-greedy action selection
+eps_end = 0.01          # minimum value of epsilon
+eps_decay = 0.995       # multiplicative factor (per episode) for decreasing epsilon
+
+# dqn_agent settings.
+[agent]
+replay_buffer_size = 100_000
+batch_size = 64
+gamma = 0.99        # discount factor.
+tau = 10E-3         # for soft update of target parameters.
+lr = 5E-4           # learning rate.
+update_every = 4    # how often to update the network

@@ -21,7 +21,7 @@ class Experience:
     state: np.ndarray
     action: int
     reward: float
-    next_state: tuple
+    next_state: np.ndarray
     done: bool
 
 
@@ -60,10 +60,15 @@ class Agent:
         # Q-Network
         self.qnetwork_local: QNetwork = QNetwork(state_size, action_size, seed).to(DEVICE)
         self.qnetwork_target: QNetwork = QNetwork(state_size, action_size, seed).to(DEVICE)
-        self.optimizer: optim.Adam = optim.Adam(self.qnetwork_local.parameters(), lr=settings.lr)
+        self.optimizer: optim.Adam = optim.Adam(self.qnetwork_local.parameters(), lr=settings.agent.lr)
 
         # Replay memory
-        self.memory: ReplayBuffer = ReplayBuffer(action_size, settings.replay_buffer_size, settings.batch_size, seed)
+        self.memory: ReplayBuffer = ReplayBuffer(
+            action_size,
+            settings.agent.replay_buffer_size,
+            settings.agent.batch_size,
+            seed,
+        )
         # Initialize time step (for updating every UPDATE_EVERY steps)
         self.t_step: int = 0
 
@@ -72,14 +77,14 @@ class Agent:
         self.memory.add(exp)
 
         # Learn every update_every time steps.
-        self.t_step = (self.t_step + 1) % settings.update_every
+        self.t_step = (self.t_step + 1) % settings.agent.update_every
         if self.t_step == 0:
             # If enough samples are available in memory, get random subset and learn
-            if len(self.memory) > settings.batch_size:
+            if len(self.memory) > settings.agent.batch_size:
                 experiences: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor] = self.memory.sample()
-                self.learn(experiences, settings.gamma)
+                self.learn(experiences, settings.agent.gamma)
 
-    def act(self, state: np.ndarray, eps: float = 0.):
+    def act(self, state: np.ndarray, eps: float = 0.) -> int:
         """Returns actions for given state as per current policy.
 
         Params
@@ -95,7 +100,7 @@ class Agent:
 
         # Epsilon-greedy action selection
         if random.random() > eps:
-            return np.argmax(action_values.cpu().data.numpy())
+            return int(np.argmax(action_values.cpu().data.numpy()))
         else:
             return random.choice(np.arange(self.action_size))
 
@@ -126,7 +131,7 @@ class Agent:
         self.optimizer.step()
 
         # ------------------- update target network ------------------- #
-        self.soft_update(self.qnetwork_local, self.qnetwork_target, settings.tau)
+        self.soft_update(self.qnetwork_local, self.qnetwork_target, settings.agent.tau)
 
 
 class ReplayBuffer:

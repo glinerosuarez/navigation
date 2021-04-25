@@ -10,11 +10,18 @@ settings = Dynaconf(
         Validator("agent.gamma", gte=0.9, lt=1.0, must_exist=True),
         Validator("agent.tau", gte=1e-3, lt=1.0, must_exist=True),
         Validator("agent.lr", gte=1e-4, lt=1.0, must_exist=True),
-        Validator("agent.update_every", gte=1e-4, lt=1.0, must_exist=True),
+        Validator("agent.update_every", gte=4, must_exist=True),
     ]
 )
 
 settings.validators.validate()
+
+assert isinstance(settings.seed, int)
+assert isinstance(settings.episodes, int)
+assert isinstance(settings.max_t, int)
+assert isinstance(settings.eps_start, float)
+assert isinstance(settings.eps_end, float)
+assert isinstance(settings.eps_decay, float)
 
 assert isinstance(settings.agent.replay_buffer_size, int)
 assert isinstance(settings.agent.batch_size, int)
