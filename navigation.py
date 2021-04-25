@@ -1,41 +1,33 @@
-import click
+import sys
 import time
 import torch
+import random
 import numpy as np
 from pathlib import Path
 from model import QNetwork
 from config import settings
 from collections import deque
-from typing import List, Deque
 import matplotlib.pyplot as plt
+from typing import List, Deque, Tuple
 from dqn_agent import Agent, Experience
+from argparse import ArgumentParser, Namespace
 from unityagents import UnityEnvironment, BrainParameters, BrainInfo
 
 
 def navigate_randomly():
-    # Start environment.
-    env = UnityEnvironment(file_name=settings.env_file)
-
-    # Environments contain brains which are responsible for deciding the actions of their associated agents.
-    # Here we check for the first brain available, and set it as the default brain we will be controlling from Python.
-    brain_name = env.brain_names[0]
-    brain = env.brains[brain_name]
+    # Init environment.
+    env, brain_name, state_size, action_size, _ = init_env(settings.env_file, train_mode=False)
 
     # Take random actions in the environment.
-    action_size = brain.vector_action_space_size        # number of actions
-    env_info = env.reset(train_mode=False)[brain_name]  # reset the environment
-    state = env_info.vector_observations[0]             # get the current state
-    score = 0                                           # initialize the score
+    score: float = 0                                            # initialize the score
 
     while True:
-        action = np.random.randint(action_size)         # select an action
-        env_info = env.step(action)[brain_name]         # send the action to the environment
-        next_state = env_info.vector_observations[0]    # get the next state
-        reward = env_info.rewards[0]                    # get the reward
-        done = env_info.local_done[0]                   # see if episode has finished
-        score += reward                                 # update the score
-        state = next_state                              # roll over the state to next time step
-        if done:                                        # exit loop if episode finished
+        action: int = np.random.randint(action_size)            # select an action
+        env_info: BrainInfo = env.step(action)[brain_name]      # send the action to the environment
+        reward: float = env_info.rewards[0]                     # get the reward
+        done: bool = env_info.local_done[0]                     # see if episode has finished
+        score += reward                                         # update the score
+        if done:                                                # exit loop if episode finished
             env.close()
             break
 
@@ -84,7 +76,15 @@ def learn_to_navigate():
         save_model(model, weights_file)
         save_scores_plot(scores, avg_score_file)
 
-    def dqn(n_episodes: int, max_t: int, eps_start: float, eps_end: float, eps_decay: float) -> None:
+    def dqn(
+            agent: Agent,
+            env: UnityEnvironment,
+            n_episodes: int,
+            max_t: int,
+            eps_start: float,
+            eps_end: float,
+            eps_decay: float
+    ) -> None:
         """Deep Q-Learning.
         Params
         ======
@@ -136,6 +136,7 @@ def learn_to_navigate():
                     Path()/settings.output_dir,
                     settings.checkpoints_dir
                 )
+                env.close()
                 break
 
         # episodes reached, save the outputs.
@@ -146,25 +147,107 @@ def learn_to_navigate():
             Path() / settings.output_dir,
             settings.checkpoints_dir
         )
+        env.close()
 
-    # Start environment.
-    env: UnityEnvironment = UnityEnvironment(file_name=settings.env_file, seed=settings.seed)
+    # Init environment.
+    env, brain_name, state_size, action_size, _ = init_env(settings.env_file, train_mode=True, seed=settings.seed)
 
-    # Environments contain brains which are responsible for deciding the actions of their associated agents.
-    # Here we check for the first brain available, and set it as the default brain we will be controlling from Python.
-    brain_name: str = env.brain_names[0]
-    brain: BrainParameters = env.brains[brain_name]
-
-    # Accumulate experience and train the agent.
-    action_size: int = brain.vector_action_space_size                                       # number of actions
-    state_size: int = len(env.reset(train_mode=False)[brain_name].vector_observations[0])   # get the current stat
-
+    # Init agent.
     agent: Agent = Agent(state_size, action_size, settings.seed)
 
-    dqn(settings.episodes, settings.max_t, settings.eps_start, settings.eps_end, settings.eps_decay)
+    # Train agent.
+    dqn(agent, env, settings.episodes, settings.max_t, settings.eps_start, settings.eps_end, settings.eps_decay)
+
+
+def navigate_smart(model_file: Path) -> None:
+    """Take the model trained the longest to navigate through the Banana environment"""
+
+    # Init environment.
+    env, brain_name, state_size, action_size, state = init_env(settings.env_file, train_mode=False)
+    # Load last trained model.
+    agent: Agent = Agent(state_size, action_size, random.randint(0, 100))
+    agent.qnetwork_local.load_state_dict(torch.load(model_file))
+    agent.qnetwork_local.eval()
+
+    score: float = 0.0
+
+    while True:
+        action: int = agent.act(state)
+        env_info: BrainInfo = env.step(action)[brain_name]
+        next_state: np.ndarray = env_info.vector_observations[0]
+        reward: float = env_info.rewards[0]
+        done: bool = env_info.local_done[0]
+        state = next_state
+        score += reward
+        if done:
+            break
+
+    print("Score: {}".format(score))
 
 
 if __name__ == "__main__":
-    learn_to_navigate()
+
+    def init_env(
+            env_file: str,
+            train_mode: bool = True,
+            seed: int = random.randint(0, 100)
+    ) -> Tuple[UnityEnvironment, str, int, int, Tuple[float]]:
+        """initialize Banana UnityEnvironment"""
+
+        env: UnityEnvironment = UnityEnvironment(file_name=env_file, seed=seed)
+
+        # Environments contain brains which are responsible for deciding the actions of their associated agents.
+        # Here we check for the first brain available, and set it as the default brain we will be controlling from Python.
+        brain_name: str = env.brain_names[0]
+        brain: BrainParameters = env.brains[brain_name]
+
+        # Accumulate experience and train the agent.
+        action_size: int = brain.vector_action_space_size                                       # number of actions
+        state: Tuple[float] = env.reset(train_mode)[brain_name].vector_observations[0]          # initial state
+        state_size: int = len(state)                                                            # get the current stat
+
+        return env, brain_name, state_size, action_size, state
+
+    def get_last_model_file(checkpoints_dir: Path) -> Path:
+        """Return the saved model which was trained the longest"""
+        try:
+            last_model_file: Path = Path(max([str(p) for p in checkpoints_dir.rglob("*.pth")]))
+            print(f"loading model {last_model_file}")
+        except ValueError:
+            print("It seems there is no trained agent yet, run navigation.py --train to train an agent")
+            sys.exit()
+        return last_model_file
+
+    navigate_smart(get_last_model_file(Path() / settings.output_dir / settings.checkpoints_dir))
+
+    parser: ArgumentParser = ArgumentParser()
+    parser.add_argument(
+        "-t",
+        "--train",
+        help="train an agent to solve the Banana environment while navigating through it",
+        action="store_true"
+    )
+    parser.add_argument(
+        "-n",
+        "--navigate",
+        help="use the agent that was trained the longest to navigate through the Banana environment, "
+             "this is the default option",
+        action="store_true"
+    )
+    parser.add_argument(
+        "-r",
+        "--random",
+        help="use an agent that chooses actions at random to navigate through the Banana environment",
+        action="store_true"
+    )
+
+    args: Namespace = parser.parse_args()
+
+    if args.train:
+        learn_to_navigate()
+    elif args.random:
+        navigate_randomly()
+    else:
+        navigate_smart(get_last_model_file(Path()/settings.output_dir/settings.checkpoints_dir))
 
 
