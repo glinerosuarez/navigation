@@ -218,8 +218,6 @@ if __name__ == "__main__":
             sys.exit()
         return last_model_file
 
-    navigate_smart(get_last_model_file(Path() / settings.output_dir / settings.checkpoints_dir))
-
     parser: ArgumentParser = ArgumentParser()
     parser.add_argument(
         "-t",
