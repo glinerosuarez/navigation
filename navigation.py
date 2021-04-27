@@ -228,7 +228,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-n",
         "--navigate",
-        help="use the agent that was trained the longest to navigate through the Banana environment, "
+        help="use the agent that was trained the longest to navigate through the Banana environment"
              "this is the default option",
         action="store_true"
     )
