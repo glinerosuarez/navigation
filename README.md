@@ -37,7 +37,8 @@ The task is episodic, and in order to solve the environment, our agent must get 
 
     (_For AWS_) If you'd like to train the agent on AWS (and have not [enabled a virtual screen](https://github.com/Unity-Technologies/ml-agents/blob/master/docs/Training-on-Amazon-Web-Service.md)), then please use [this link](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P1/Banana/Banana_Linux_NoVis.zip) to obtain the environment.
 
-2. Set `env_file` in the `settings.toml` file to the path where your environment file is stored.
+2. Set `env_file` in the `settings.toml` file to the path where your environment file is stored, I'm using the 
+   environment dir.
 
 3. Install the dependencies:
    - cd to the navigation directory.
